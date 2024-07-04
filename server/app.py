@@ -53,32 +53,34 @@ def delete_restaurant(id):
 @app.route('/pizzas', methods=['GET'])
 def pizzas():
     pizzas = Pizza.query.all()
-    return jsonify([{"ingredients": p.ingredients, "name": p.name} for p in pizzas]), 200
+    return jsonify([{"id":p.id, "ingredients": p.ingredients, "name": p.name} for p in pizzas]), 200
 
 @app.route('/restaurant_pizzas', methods=['POST'])
 def create_restaurant_pizza():
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"errors": ["No JSON data received"]}), 400
+        data = request.get_json()  # Safely get JSON data
 
-        price = float(data.get('price'))
-        pizza_id = int(data.get('pizza_id'))
-        restaurant_id = int(data.get('restaurant_id'))
+        price = float(data.get('price'))  # Convert to float explicitly
+        pizza_id = int(data.get('pizza_id'))  # Convert to int explicitly
+        restaurant_id = int(data.get('restaurant_id'))  # Convert to int explicitly
 
+        # Validate input
         if not price or not pizza_id or not restaurant_id:
-            return jsonify({"errors": ["All fields required"]}), 400
+            return jsonify({"errors": ["validation errors"]}), 400
 
-        pizza = Pizza.query.get(pizza_id)
-        restaurant = Restaurant.query.get(restaurant_id)
+        # Fetch existing Pizza and Restaurant
+        try:
+            pizza = Pizza.query.get(pizza_id)
+            restaurant = Restaurant.query.get(restaurant_id)
+        except NoResultFound:
+            return jsonify({"errors": ["validation errors"]}), 404
 
-        if not pizza or not restaurant:
-            return jsonify({"errors": ["Pizza or Restaurant not found"]}), 404
-
+        # Create new RestaurantPizza
         new_restaurant_pizza = RestaurantPizza(price=price, pizza=pizza, restaurant=restaurant)
         db.session.add(new_restaurant_pizza)
         db.session.commit()
 
+        # Construct and return response
         response_data = {
             "id": new_restaurant_pizza.id,
             "price": price,
@@ -97,10 +99,8 @@ def create_restaurant_pizza():
         }
         return jsonify(response_data), 201
 
-    except ValueError:
-        return jsonify({"errors": ["Validation errors"]}), 400
-    except NoResultFound:
-        return jsonify({"errors": ["Pizza or Restaurant not found"]}), 404
+    except ValueError:  # Catch specific exceptions like ValueError for type conversion failures
+        return jsonify({"errors": ["validation errors"]}), 400
     except Exception as e:
         return jsonify({"errors": [str(e)]}), 500
 
