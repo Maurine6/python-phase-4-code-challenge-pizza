@@ -29,10 +29,10 @@ function PizzaForm({ restaurantId, onAddPizza }) {
       if (r.ok) {
         r.json().then((newPizzaRestaurant) => {
           onAddPizza(newPizzaRestaurant);
-          setFormErrors([]);
+          //setFormErrors([]);
         });
       } else {
-        r.json().then((err) => setFormErrors(err.errors));
+        r.json().then((err) => console.log("Failed to add pizza to restaurant"));//setFormErrors(err.errors));
       }
     });
   }
